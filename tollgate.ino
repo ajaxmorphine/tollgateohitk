@@ -7,16 +7,20 @@
 #define LED_G 5 //define green LED pin
 #define LED_R 4 //define red LED
 #define BUZZER 2 //buzzer pin
-MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
-Servo myServo; //define servo name
+#define TRIG_PIN 7
+#define ECHO_PIN 6
+MFRC522 mfrc522(SS_PIN, RST_PIN);   
+Servo myServo; 
  
 void setup() 
 {
-  Serial.begin(9600);   // Initiate a serial communication
-  SPI.begin();      // Initiate  SPI bus
-  mfrc522.PCD_Init();   // Initiate MFRC522
-  myServo.attach(3); //servo pin
-  myServo.write(6); //servo start position
+  Serial.begin(9600);
+  SPI.begin();
+  mfrc522.PCD_Init();
+  myServo.attach(3);
+  myServo.write(6);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
   pinMode(LED_G, OUTPUT);
   pinMode(LED_R, OUTPUT);
   pinMode(BUZZER, OUTPUT);
@@ -28,17 +32,17 @@ void setup()
 }
 void loop() 
 {
-  // Look for new cards
+
   if ( ! mfrc522.PICC_IsNewCardPresent()) 
   {
     return;
   }
-  // Select one of the cards
+  
   if ( ! mfrc522.PICC_ReadCardSerial()) 
   {
     return;
   }
-  //Show UID on serial monitor
+  
   Serial.print("UID tag :");
   String content= "";
   byte letter;
@@ -52,7 +56,7 @@ void loop()
   Serial.println();
   Serial.print("Message : ");
   content.toUpperCase();
-  if (content.substring(1) == "D3 3E 2C DD") //change here the UID of the card/cards that you want to give access
+  if (content.substring(1) == "D3 3E 2C DD") //UID
   {
     Serial.println("Authorized access");
     Serial.println();
