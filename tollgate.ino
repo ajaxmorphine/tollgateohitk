@@ -25,7 +25,7 @@ void setup()
   pinMode(LED_R, OUTPUT);
   pinMode(BUZZER, OUTPUT);
   noTone(BUZZER);
-  Serial.println("Put your card to the reader...");
+  Serial.println("Tempelkan kartu E-Toll...");
   Serial.println();
   digitalWrite(LED_R, HIGH);
 
@@ -58,11 +58,14 @@ void loop()
   content.toUpperCase();
   if (content.substring(1) == "D3 3E 2C DD") //UID
   {
-    Serial.println("Authorized access");
+    Serial.println("Saldo E-Toll Cukup");
     Serial.println();
     delay(500);
     digitalWrite(LED_G, HIGH);
     digitalWrite(LED_R, LOW);
+    tone(BUZZER, 200);
+    delay(150);
+    noTone(BUZZER);
     myServo.write(103);
     delay(5000);
     myServo.write(6);
@@ -71,8 +74,8 @@ void loop()
   }
  
  else   {
-    Serial.println(" Access denied");
-    tone(BUZZER, 300);
+    Serial.println("Saldo E-Toll Tidak Cukup");
+    tone(BUZZER, 200);
     delay(1000);
     noTone(BUZZER);
   }
