@@ -25,13 +25,29 @@ void setup()
   pinMode(LED_R, OUTPUT);
   pinMode(BUZZER, OUTPUT);
   noTone(BUZZER);
-  Serial.println("Tempelkan kartu E-Toll...");
+  Serial.println("Tap E-Toll...");
   Serial.println();
   digitalWrite(LED_R, HIGH);
 
 }
+
+void palang(int dari, int ke, int jeda) {
+  if (dari < ke) {
+    for (int i = dari; i <= ke; i++) {
+      myServo.write(i);
+      delay(jeda);
+    }
+  } else {
+    for (int i = dari; i >= ke; i--) {
+      myServo.write(i);
+      delay(jeda);
+    }
+  }
+}
+
 void loop() 
 {
+  mfrc522.PCD_StopCrypto1();
 
   if ( ! mfrc522.PICC_IsNewCardPresent()) 
   {
@@ -40,10 +56,11 @@ void loop()
   
   if ( ! mfrc522.PICC_ReadCardSerial()) 
   {
+    mfrc522.PCD_Init();
     return;
   }
   
-  Serial.print("UID tag :");
+  Serial.print("E-Toll :");
   String content= "";
   byte letter;
   for (byte i = 0; i < mfrc522.uid.size; i++) 
@@ -54,29 +71,29 @@ void loop()
      content.concat(String(mfrc522.uid.uidByte[i], HEX));
   }
   Serial.println();
-  Serial.print("Message : ");
+  Serial.print("Pesan : ");
   content.toUpperCase();
   if (content.substring(1) == "D3 3E 2C DD") //UID
   {
-    Serial.println("Saldo E-Toll Cukup");
+    Serial.println("Tap E-Toll Berhasil");
     Serial.println();
     delay(500);
-    digitalWrite(LED_G, HIGH);
-    digitalWrite(LED_R, LOW);
-    tone(BUZZER, 200);
+    tone(BUZZER, 2500);
     delay(150);
     noTone(BUZZER);
-    myServo.write(103);
+    digitalWrite(LED_G, HIGH);
+    digitalWrite(LED_R, LOW);
+    palang(6, 103, 4);
     delay(5000);
-    myServo.write(6);
+    palang(103, 6, 4);
     digitalWrite(LED_G, LOW);
     digitalWrite(LED_R, HIGH);
   }
  
  else   {
-    Serial.println("Saldo E-Toll Tidak Cukup");
-    tone(BUZZER, 200);
-    delay(1000);
+    Serial.println("Tap E-Toll Gagal");
+    tone(BUZZER, 2500);
+    delay(500);
     noTone(BUZZER);
   }
 }
