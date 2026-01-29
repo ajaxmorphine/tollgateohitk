@@ -46,8 +46,35 @@ void palang(int dari, int ke, int jeda) {
   }
 }
 
-void loop() 
-{
+void loop() {
+  // --- 1. CEK PERINTAH DARI PYTHON (TKINTER) ---
+  if (Serial.available() > 0) {
+    char perintah = Serial.read();
+
+    if (perintah == 'E') { 
+      // EMERGENCY EXIT
+      Serial.println("Pesan : Berhasil (Emergency)"); 
+      digitalWrite(LED_G, HIGH);
+      digitalWrite(LED_R, LOW);
+      palang(6, 103, 2); // Buka cepat
+      delay(3000);       // Buka selama 3 detik
+      palang(103, 6, 4); // Tutup kembali
+      digitalWrite(LED_G, LOW);
+      digitalWrite(LED_R, HIGH);
+    } 
+    
+    else if (perintah == 'R') {
+      // RESET CONTROL
+      Serial.println("Pesan : System & Count Reset");
+      gagalCount = 0;
+      noTone(BUZZER);
+      // Pastikan palang tertutup
+      myServo.write(6); 
+      digitalWrite(LED_G, LOW);
+      digitalWrite(LED_R, HIGH);
+    }
+  }
+
   mfrc522.PCD_StopCrypto1();
 
   if ( ! mfrc522.PICC_IsNewCardPresent()) 
