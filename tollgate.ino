@@ -4,13 +4,14 @@
  
 #define SS_PIN 10
 #define RST_PIN 9
-#define LED_G 5 //define green LED pin
-#define LED_R 4 //define red LED
-#define BUZZER 2 //buzzer pin
+#define LED_G 5
+#define LED_R 4
+#define BUZZER 2
 #define TRIG_PIN 7
 #define ECHO_PIN 6
 MFRC522 mfrc522(SS_PIN, RST_PIN);   
 Servo myServo; 
+int gagalCount = 0;
  
 void setup() 
 {
@@ -90,10 +91,29 @@ void loop()
     digitalWrite(LED_R, HIGH);
   }
  
- else   {
-    Serial.println("Tap E-Toll Gagal");
+ else {
+  Serial.println("Tap E-Toll Gagal");
+  gagalCount++;
+
+  if (gagalCount >= 5) {
+    Serial.println("Peringatan: Gagal 5 Kali!");
+    
+    unsigned long startTime = millis();
+    while (millis() - startTime < 5000) {
+      tone(BUZZER, 2500);
+      digitalWrite(LED_R, LOW);
+      delay(200);
+      noTone(BUZZER);
+      digitalWrite(LED_R, HIGH);
+      delay(200);
+    }
+    
+    gagalCount = 0;
+  } 
+  else {
     tone(BUZZER, 2500);
     delay(500);
     noTone(BUZZER);
   }
+}
 }
