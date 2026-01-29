@@ -53,7 +53,7 @@ void loop() {
 
     if (perintah == 'E') { 
       // EMERGENCY EXIT
-      Serial.println("Pesan : Berhasil (Emergency)"); 
+      Serial.println("Pesan : Emergency"); 
       digitalWrite(LED_G, HIGH);
       digitalWrite(LED_R, LOW);
       palang(6, 103, 2); // Buka cepat
