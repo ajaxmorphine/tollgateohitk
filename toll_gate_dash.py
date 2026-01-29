@@ -43,6 +43,11 @@ def update_label():
                     root.config(bg="#2ecc71")
                     label.config(bg="#2ecc71", fg="white")
                     root.after(5000, reset_to_idle)
+
+                elif "Emergency" in msg:
+                    root.config(bg="#f1c40f")
+                    label.config(bg="#f1c40f", fg="white")
+                    root.after(5000, reset_to_idle)
                 
                 elif "Gagal" in msg or "Peringatan" in msg:
                     root.config(bg="#e74c3c")
