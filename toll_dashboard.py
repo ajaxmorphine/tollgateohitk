@@ -4,6 +4,7 @@ import tkinter as tk
 import time
 from tkinter import messagebox # Untuk notifikasi pop-up
 from toll_database import TollDatabase
+import webbrowser
 
 db = TollDatabase()
 
@@ -16,7 +17,7 @@ except Exception as e:
 
 kendaraan_count = db.get_last_id()
 
-# --- FUNGSI LAINNYA ---
+# --- FUNGSI LAINNYA --- 
 def update_time():
     current_time = time.strftime('%H:%M:%S %d-%m-%Y')
     label_jam.config(text=current_time)
@@ -36,6 +37,9 @@ def reset_all():
 def reset_to_idle():
     root.config(bg="#ffffff")
     label.config(text="Tap Kartu E-Toll", bg="#ffffff", fg="#223468")
+    
+def cctv_tol_balikpapan_samarinda():
+    webbrowser.open("https://nataru.pu.go.id/cctv-tol?id_ruas=balikpapan-samarinda")
 
 def update_label():
     global kendaraan_count
@@ -97,13 +101,19 @@ def hapus_riwayat_db():
 
 # --- UI SETUP ---
 root = tk.Tk()
-root.title("Toll Gate Karang Joang - #KonektivitasUntukNegeri")
+root.title("Tol Balikpapan Samarinda - #KonektivitasUntukNegeri (Administrator)")
 root.iconbitmap("kemenpu.ico")
-root.geometry("800x650") # Sedikit lebih tinggi untuk tombol baru
+root.geometry("1000x700") # Sedikit lebih tinggi untuk tombol baru
 root.config(bg="#ffffff")
 
-label_jam = tk.Label(root, text="", font=("Roboto", 18, "bold"), bg="#223468", fg="white", pady=5)
-label_jam.pack(side="top", fill="x")
+frame_header = tk.Frame(root, bg="#223468", height=80)
+frame_header.pack(side="top", fill="x")
+
+Label_Proyek = tk.Label(frame_header, text="Toll Gate: Manggar", font=("Roboto", 20, "bold"), bg="#223468", fg="white", pady=5)
+Label_Proyek.pack(side="left", fill="x")
+
+label_jam = tk.Label(frame_header, text="", font=("Roboto", 18, "bold"), bg="#223468", fg="white", pady=5)
+label_jam.pack(side="right", fill="x")
 
 label = tk.Label(root, text="Tap Kartu E-Toll", font=("Roboto", 50, "bold"), bg="#ffffff", fg="#223468")
 label.pack(expand=True, fill='both')
@@ -139,6 +149,10 @@ btn_reset.pack(side="left", padx=10, pady=10)
 btn_emergency = tk.Button(frame_tombol, text="EMERGENCY EXIT", font=("Roboto", 11, "bold"), 
                           bg="#fcb717", fg="white", command=emergency_exit, padx=20, pady=10)
 btn_emergency.pack(side="left", padx=10, pady=10)
+
+btn_web = tk.Button(frame_tombol, text="CCTV TOL BALIKPAPAN SAMARINDA (JBS)", font=("Roboto", 11, "bold"), 
+                    bg="#2980b9", fg="white", command=cctv_tol_balikpapan_samarinda, padx=20, pady=10)
+btn_web.pack(side="right", padx=10, pady=10)
 
 label_counter = tk.Label(root, text="Kendaraan Lewat: 0", font=("Roboto", 24, "bold"), fg="white", padx=20, pady=10, bg="#3A3B3D")
 label_counter.pack(side="right", padx=10, pady=10)
