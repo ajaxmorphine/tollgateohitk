@@ -1,9 +1,9 @@
 import serial
 import tkinter as tk
 import time
-import csv # 1. Tambahkan modul CSV
 from tkinter import messagebox # Untuk notifikasi pop-up
 
+# --- INISIALISASI SERIAL ---
 try:
     ser = serial.Serial('COM12', 9600, timeout=1) 
 except Exception as e:
