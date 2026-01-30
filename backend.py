@@ -10,22 +10,21 @@ from toll_database import TollDatabase
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Inisialisasi FastAPI dan Database
 app = FastAPI()
 db = TollDatabase()
 
 # --- KONFIGURASI SERIAL ---
-SERIAL_PORT = 'COM12' # Sesuaikan dengan port Arduino kamu
+SERIAL_PORT = 'COM12' 
 BAUD_RATE = 9600
 
 try:
+    # Timeout kecil agar pembacaan tidak memblokir loop async
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)
     logger.info(f"Terhubung ke Arduino di {SERIAL_PORT}")
 except Exception as e:
     logger.error(f"Gagal koneksi Serial: {e}")
     ser = None
 
-# Manager untuk mengelola koneksi browser (WebSocket)
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
@@ -33,7 +32,6 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
-        # Kirim data awal saat browser baru dibuka
         await self.send_initial_data(websocket)
 
     def disconnect(self, websocket: WebSocket):
@@ -43,16 +41,14 @@ class ConnectionManager:
     async def send_initial_data(self, websocket: WebSocket):
         try:
             history = db.fetch_all_data() or []
-            # Format: id=0, timestamp=1, card_id=2 sesuai toll_database.py
             formatted_history = [{"waktu": r[1], "id_kartu": r[2]} for r in reversed(history[-5:])]
-            
             await websocket.send_text(json.dumps({
                 "type": "init_data",
                 "count": db.get_last_id(),
                 "history": formatted_history
             }))
         except Exception as e:
-            logger.error(f"Error sending init data: {e}")
+            logger.error(f"Error init data: {e}")
 
     async def broadcast(self, message: dict):
         for connection in self.active_connections:
@@ -63,44 +59,45 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# --- BACKGROUND TASK: MEMBACA SERIAL ARDUINO ---
+# --- TASK: MEMBACA DATA DARI ARDUINO ---
 async def read_serial_task():
     while True:
         if ser and ser.is_open:
             try:
                 if ser.in_waiting > 0:
                     raw_line = ser.readline().decode('utf-8', errors='ignore').strip()
-                    if not raw_line:
-                        continue
-                        
-                    logger.info(f"Arduino: {raw_line}")
+                    if not raw_line: continue
+                    
+                    logger.info(f"Arduino says: {raw_line}")
 
-                    # Logika deteksi pesan dari Arduino
-                    # Contoh format: "Pesan : Akses Berhasil" atau "Pesan : Saldo Kurang"
-                    if "Pesan : " in raw_line:
-                        msg = raw_line.split("Pesan : ")[1].strip()
+                    if "Pesan :" in raw_line:
+                        msg = raw_line.split("Pesan :")[1].strip()
                         
-                        # Jika berhasil, simpan ke database
-                        if "berhasil" in msg.lower():
-                            db.insert_data("E-TOLL-USER")
-                            # Kirim update data terbaru (counter & tabel) setelah insert
+                        # Trigger database simpan jika Arduino mengirim pesan Berhasil
+                        if "Berhasil" in msg:
+                            # Mengambil ID kartu dari baris sebelumnya jika perlu, 
+                            # atau gunakan dummy user jika Arduino tidak mengirim UID spesifik di baris yang sama
+                            db.insert_data("E-TOLL-USER") 
+                            
                             history = db.fetch_all_data() or []
                             formatted_history = [{"waktu": r[1], "id_kartu": r[2]} for r in reversed(history[-5:])]
+                            
                             await manager.broadcast({
                                 "type": "init_data",
                                 "count": db.get_last_id(),
                                 "history": formatted_history
                             })
                         
-                        # Kirim status update untuk animasi (Layar Hijau/Merah)
+                        # Kirim update status ke UI (Warna Hijau/Merah/Orange)
                         await manager.broadcast({
                             "type": "status_update",
                             "message": msg
                         })
+
             except Exception as e:
-                logger.error(f"Error reading serial: {e}")
+                logger.error(f"Serial Read Error: {e}")
         
-        await asyncio.sleep(0.05) # Delay kecil agar tidak membebani CPU
+        await asyncio.sleep(0.05)
 
 @app.on_event("startup")
 async def startup_event():
@@ -114,28 +111,33 @@ async def get():
         with open("index.html", "r", encoding="utf-8") as f:
             return HTMLResponse(f.read())
     except FileNotFoundError:
-        return HTMLResponse("File index.html tidak ditemukan.", status_code=404)
-
-@app.get("/data")
-async def get_latest_data():
-    history = db.fetch_all_data() or []
-    return {
-        "count": db.get_last_id(),
-        "history": [{"waktu": r[1], "id_kartu": r[2]} for r in reversed(history[-5:])]
-    }
+        return HTMLResponse("index.html missing", status_code=404)
 
 @app.post("/command/{cmd}")
-async def send_command_to_arduino(cmd: str):
+async def send_command(cmd: str):
     if ser and ser.is_open:
-        # Arduino biasanya butuh karakter tunggal seperti 'E' atau 'R'
-        ser.write(cmd.encode())
-        return {"status": "success", "command": cmd}
-    return {"status": "error", "message": "Serial tidak terhubung"}
+        try:
+            # Arduino menggunakan Serial.read() (char tunggal)
+            # Kirim 'E' atau 'R' langsung tanpa \n agar buffer bersih
+            ser.write(cmd.encode()) 
+            ser.flush() 
+            
+            # Broadcast lokal agar UI langsung merespon tanpa nunggu feedback serial
+            status_msg = "Emergency Mode" if cmd == 'E' else "System Reset"
+            await manager.broadcast({
+                "type": "status_update",
+                "message": status_msg
+            })
+
+            return {"status": "success"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+    return {"status": "error", "message": "Serial Disconnected"}
 
 @app.delete("/clear")
-async def clear_database_records():
+async def clear_database():
     if db.clear_table():
-        # Beritahu semua client bahwa data sudah kosong
+        # Beritahu semua client bahwa data sudah nol
         await manager.broadcast({
             "type": "init_data",
             "count": 0,
@@ -149,6 +151,6 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            await websocket.receive_text() # Menjaga koneksi
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
