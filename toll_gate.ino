@@ -65,7 +65,7 @@ void loop() {
     
     else if (perintah == 'R') {
       // RESET CONTROL
-      Serial.println("Pesan : System & Count Reset");
+      Serial.println("Pesan : Count Reset");
       gagalCount = 0;
       noTone(BUZZER);
       // Pastikan palang tertutup
