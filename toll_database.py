@@ -25,7 +25,7 @@ class TollDatabase:
         try:
             conn = sqlite3.connect(self.db_name)
             cursor = conn.cursor()
-            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            now = datetime.now().strftime('%H:%M:%S %d-%m-%Y')
             cursor.execute("INSERT INTO kendaraan_masuk (timestamp, card_id) VALUES (?, ?)", 
                            (now, card_id))
             conn.commit()
@@ -58,3 +58,17 @@ class TollDatabase:
         except Exception as e:
             print(f"Gagal menghapus database: {e}")
             return False
+        
+    def fetch_all_data(self):
+        """Mengambil semua data dari tabel kendaraan_masuk."""
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
+            # Gunakan nama tabel yang benar: kendaraan_masuk
+            cursor.execute("SELECT * FROM kendaraan_masuk")
+            rows = cursor.fetchall()
+            conn.close()
+            return rows
+        except Exception as e:
+            print(f"Database Error saat fetch: {e}")
+            return []
