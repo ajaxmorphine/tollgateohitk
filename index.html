@@ -62,8 +62,8 @@
             <div id="statusIcon" class="mb-6">
                 <i class="fas fa-id-card text-6xl text-white/20"></i>
             </div>
-            <h2 id="statusMessage" class="text-white text-3xl md:text-4xl font-black leading-tight uppercase">
-                TAP KARTU<br><span class="text-white/60 text-xl font-medium lowercase">e-toll anda</span>
+            <h2 id="statusMessage" class="text-white text-3xl md:text-4xl font-black leading-tight">
+                TAP KARTU<br><span class="text-white/60 text-xl font-medium">E-TOLL ANDA</span>
             </h2>
             <!-- Decorator Circles -->
             <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full"></div>
@@ -137,7 +137,6 @@
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            console.log("WS Data received:", data); // Untuk debugging
             if (data.type === "status_update") {
                 handleStatusChange(data.message);
             } else if (data.type === "init_data") {
@@ -154,46 +153,36 @@
             clearTimeout(resetTimer);
             card.classList.remove('pulse-animation');
 
-            // Cek Pesan Berhasil
-            if (msg.toLowerCase().includes("berhasil")) {
+            if (msg.includes("Berhasil")) {
                 card.className = "status-card bg-success rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden min-h-[300px] flex flex-col justify-center items-center pulse-animation";
                 icon.innerHTML = '<i class="fas fa-check-circle text-6xl text-white"></i>';
-                label.innerHTML = `AKSES DITERIMA<br><span class="text-white/80 text-lg font-medium lowercase italic">silahkan lewat</span>`;
+                label.innerHTML = `AKSES DITERIMA<br><span class="text-white/80 text-lg font-medium">Silahkan Lewat</span>`;
                 refreshData();
-            } 
-            // Cek Pesan Gagal (Tambah deteksi saldo atau gagal)
-            else if (msg.toLowerCase().includes("gagal") || msg.toLowerCase().includes("saldo") || msg.toLowerCase().includes("ditolak")) {
-                card.className = "status-card bg-error rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden min-h-[300px] flex flex-col justify-center items-center pulse-animation";
+            } else if (msg.includes("Gagal")) {
+                card.className = "status-card bg-error rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden min-h-[300px] flex flex-col justify-center items-center";
                 icon.innerHTML = '<i class="fas fa-times-circle text-6xl text-white"></i>';
-                label.innerHTML = `AKSES GAGAL<br><span class="text-white/80 text-lg font-medium lowercase italic">${msg.toLowerCase()}</span>`;
-            } 
-            // Cek Pesan Emergency
-            else if (msg.toLowerCase().includes("emergency")) {
+                label.innerHTML = `AKSES DITOLAK<br><span class="text-white/80 text-lg font-medium">Saldo Tidak Cukup</span>`;
+            } else if (msg.includes("Emergency")) {
                 card.className = "status-card bg-emergency rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden min-h-[300px] flex flex-col justify-center items-center";
                 icon.innerHTML = '<i class="fas fa-exclamation-triangle text-6xl text-white"></i>';
-                label.innerHTML = `EMERGENCY MODE<br><span class="text-white/80 text-lg font-medium lowercase italic">manual override</span>`;
+                label.innerHTML = `EMERGENCY MODE<br><span class="text-white/80 text-lg font-medium">Manual Override</span>`;
             }
 
-            // Kembalikan ke tampilan awal setelah 5 detik
             resetTimer = setTimeout(() => {
                 card.className = "status-card bg-idle rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden min-h-[300px] flex flex-col justify-center items-center";
                 icon.innerHTML = '<i class="fas fa-id-card text-6xl text-white/20"></i>';
-                label.innerHTML = `TAP KARTU<br><span class="text-white/60 text-xl font-medium lowercase">e-toll anda</span>`;
+                label.innerHTML = `TAP KARTU<br><span class="text-white/60 text-xl font-medium">E-TOLL ANDA</span>`;
             }, 5000);
         }
 
         function updateTable(history) {
             const tableBody = document.getElementById('historyTable');
             tableBody.innerHTML = "";
-            if (!history || history.length === 0) return;
-            
             history.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-gray-50 last:border-0";
-                // Mengambil waktu saja dari format "HH:mm:ss dd-mm-yyyy"
-                const displayTime = row.waktu.split(' ')[0];
                 tr.innerHTML = `
-                    <td class="p-4 font-semibold text-gray-500">${displayTime}</td>
+                    <td class="p-4 font-semibold text-gray-500">${row.waktu.split(' ')[0]}</td>
                     <td class="p-4 text-right">
                         <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-mono font-bold">${row.id_kartu}</span>
                     </td>
@@ -207,14 +196,10 @@
         }
 
         async function refreshData() {
-            try {
-                const response = await fetch('/data');
-                const data = await response.json();
-                document.getElementById('vehicleCounter').innerText = data.count;
-                updateTable(data.history);
-            } catch (e) {
-                console.error("Refresh Error:", e);
-            }
+            const response = await fetch('/data');
+            const data = await response.json();
+            document.getElementById('vehicleCounter').innerText = data.count;
+            updateTable(data.history);
         }
 
         async function clearHistory() {
