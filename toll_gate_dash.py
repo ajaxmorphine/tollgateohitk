@@ -1,4 +1,5 @@
 import serial
+from tkinter import ttk
 import tkinter as tk
 import time
 from tkinter import messagebox # Untuk notifikasi pop-up
@@ -50,19 +51,37 @@ def update_label():
                     label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
                     root.config(bg="#2ecc71")
                     label.config(bg="#2ecc71", fg="white")
-                    root.after(5000, reset_to_idle)
+                    refresh_table()
+                    root.after(7000, reset_to_idle)
                 elif "Gagal" in msg:
                     root.config(bg="#e74c3c")
                     label.config(bg="#e74c3c", fg="white")
-                    root.after(5000, reset_to_idle)
+                    root.after(7000, reset_to_idle)
                 elif "Emergency" in msg:
                     root.config(bg="#f39c12")
                     label.config(bg="#f39c12", fg="white")
-                    root.after(5000, reset_to_idle)
+                    root.after(7000, reset_to_idle)
         except:
             pass
     root.after(100, update_label)
+
+def refresh_table():
+    # 1. Hapus data lama di tabel UI
+    for item in tree.get_children():
+        tree.delete(item)
     
+    try:
+        # 2. Ambil data dari database
+        data = db.fetch_all_data() 
+        
+        # 3. Balik urutan (data terbaru di atas) dan ambil 5 teratas
+        # row[0] = ID, row[1] = Timestamp/Jam, row[2] = Card_ID
+        for row in reversed(data[-5:]): 
+            tree.insert("", "end", values=(row[1], row[2]))
+            
+    except Exception as e:
+        print(f"Gagal memuat data ke tabel: {e}")
+        
 def hapus_riwayat_db():
     # Menampilkan konfirmasi agar tidak terhapus tidak sengaja
     jawaban = messagebox.askyesno("Konfirmasi", "Apakah Anda yakin ingin menghapus semua riwayat kendaraan?")
@@ -77,7 +96,7 @@ def hapus_riwayat_db():
 
 # --- UI SETUP ---
 root = tk.Tk()
-root.title("Toll Gate System - #KonektivitasUntukNegeri")
+root.title("Toll Gate Karang Joang - #KonektivitasUntukNegeri")
 root.iconbitmap("kemenpu.ico")
 root.geometry("800x650") # Sedikit lebih tinggi untuk tombol baru
 root.config(bg="#ffffff")
@@ -88,11 +107,33 @@ label_jam.pack(side="top", fill="x")
 label = tk.Label(root, text="Tap Kartu E-Toll", font=("Roboto", 50, "bold"), bg="#ffffff", fg="#223468")
 label.pack(expand=True, fill='both')
 
+# Frame untuk Tabel (Sisi Kanan)
+frame_tabel = tk.Frame(root, bg="#ffffff")
+frame_tabel.place(x=25, y=370, width=280, height=200) # Posisi di kanan tengah
+
+# Judul Tabel
+lbl_recent = tk.Label(frame_tabel, text="Riwayat Terakhir", font=("Roboto", 10, "bold"), bg="#ffffff", fg="#223468")
+lbl_recent.pack(anchor="w")
+
+# Konfigurasi Treeview
+columns = ("waktu", "id_kartu")
+tree = ttk.Treeview(frame_tabel, columns=columns, show="headings", height=5)
+
+# Header Kolom
+tree.heading("waktu", text="Waktu")
+tree.heading("id_kartu", text="ID Kartu")
+
+# Lebar Kolom
+tree.column("waktu", width=100, anchor="center")
+tree.column("id_kartu", width=80, anchor="center")
+
+tree.pack(fill="both", expand=True)
+
 # Container Tombol Utama (Bawah)
 frame_tombol = tk.Frame(root, bg="#223468")
 frame_tombol.pack(side="bottom", fill="x")
 
-btn_clear_db = tk.Button(frame_tombol, text="CLEAR DATABASE", font=("Arial", 12, "bold"), 
+btn_clear_db = tk.Button(frame_tombol, text="CLEAR DATABASE", font=("Roboto", 11, "bold"), 
                          bg="#7f8c8d", fg="white", command=hapus_riwayat_db, padx=20, pady=10)
 btn_clear_db.pack(side="right", padx=10, pady=10)
 
@@ -111,4 +152,5 @@ label_counter.pack(side="right", padx=10, pady=10)
 
 update_label()
 update_time()
+refresh_table()
 root.mainloop()
