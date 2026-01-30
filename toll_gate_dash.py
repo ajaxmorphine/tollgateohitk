@@ -18,7 +18,7 @@ kendaraan_count = db.get_last_id()
 
 # --- FUNGSI LAINNYA ---
 def update_time():
-    current_time = time.strftime('%d/%m/%Y  %H:%M:%S')
+    current_time = time.strftime('%H:%M:%S %d-%m-%Y')
     label_jam.config(text=current_time)
     label_jam.after(1000, update_time)
 
@@ -90,6 +90,7 @@ def hapus_riwayat_db():
             global kendaraan_count
             kendaraan_count = 0
             label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
+            refresh_table()
             messagebox.showinfo("Berhasil", "Semua data riwayat telah dihapus!")
         else:
             messagebox.showerror("Error", "Gagal menghapus data dari database.")
@@ -107,45 +108,37 @@ label_jam.pack(side="top", fill="x")
 label = tk.Label(root, text="Tap Kartu E-Toll", font=("Roboto", 50, "bold"), bg="#ffffff", fg="#223468")
 label.pack(expand=True, fill='both')
 
-# Frame untuk Tabel (Sisi Kanan)
 frame_tabel = tk.Frame(root, bg="#ffffff")
-frame_tabel.place(x=25, y=370, width=280, height=200) # Posisi di kanan tengah
+frame_tabel.place(x=25, y=420, width=280, height=150)
 
-# Judul Tabel
 lbl_recent = tk.Label(frame_tabel, text="Riwayat Terakhir", font=("Roboto", 10, "bold"), bg="#ffffff", fg="#223468")
 lbl_recent.pack(anchor="w")
 
-# Konfigurasi Treeview
 columns = ("waktu", "id_kartu")
 tree = ttk.Treeview(frame_tabel, columns=columns, show="headings", height=5)
 
-# Header Kolom
 tree.heading("waktu", text="Waktu")
 tree.heading("id_kartu", text="ID Kartu")
 
-# Lebar Kolom
 tree.column("waktu", width=100, anchor="center")
 tree.column("id_kartu", width=80, anchor="center")
 
 tree.pack(fill="both", expand=True)
 
-# Container Tombol Utama (Bawah)
 frame_tombol = tk.Frame(root, bg="#223468")
 frame_tombol.pack(side="bottom", fill="x")
 
 btn_clear_db = tk.Button(frame_tombol, text="CLEAR DATABASE", font=("Roboto", 11, "bold"), 
                          bg="#7f8c8d", fg="white", command=hapus_riwayat_db, padx=20, pady=10)
-btn_clear_db.pack(side="right", padx=10, pady=10)
+btn_clear_db.pack(side="left", padx=10, pady=10)
 
-# Tombol Emergency (Kiri)
+btn_reset = tk.Button(frame_tombol, text="RESET COUNTER", font=("Roboto", 11, "bold"), 
+                      bg="#c0392b", fg="white", command=reset_all, padx=20, pady=10)
+btn_reset.pack(side="left", padx=10, pady=10)
+
 btn_emergency = tk.Button(frame_tombol, text="EMERGENCY EXIT", font=("Roboto", 11, "bold"), 
                           bg="#fcb717", fg="white", command=emergency_exit, padx=20, pady=10)
 btn_emergency.pack(side="left", padx=10, pady=10)
-
-# Tombol Reset (Kanan)
-btn_reset = tk.Button(frame_tombol, text="RESET COUNT", font=("Roboto", 11, "bold"), 
-                      bg="#c0392b", fg="white", command=reset_all, padx=20, pady=10)
-btn_reset.pack(side="left", padx=10, pady=10)
 
 label_counter = tk.Label(root, text="Kendaraan Lewat: 0", font=("Roboto", 24, "bold"), fg="white", padx=20, pady=10, bg="#3A3B3D")
 label_counter.pack(side="right", padx=10, pady=10)
