@@ -2,6 +2,9 @@ import serial
 import tkinter as tk
 import time
 from tkinter import messagebox # Untuk notifikasi pop-up
+from toll_database import TollDatabase
+
+db = TollDatabase()
 
 # --- INISIALISASI SERIAL ---
 try:
@@ -10,7 +13,7 @@ except Exception as e:
     print(f"Gagal koneksi: {e}")
     ser = None 
 
-kendaraan_count = 0 
+kendaraan_count = db.get_last_id()
 
 # --- FUNGSI LAINNYA ---
 def update_time():
@@ -42,6 +45,7 @@ def update_label():
                 msg = raw_data.split("Pesan : ")[1].strip()
                 label.config(text=msg)
                 if "Berhasil" in msg:
+                    db.insert_data("E-TOLL-USER")
                     kendaraan_count += 1
                     label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
                     root.config(bg="#2ecc71")
@@ -58,6 +62,18 @@ def update_label():
         except:
             pass
     root.after(100, update_label)
+    
+def hapus_riwayat_db():
+    # Menampilkan konfirmasi agar tidak terhapus tidak sengaja
+    jawaban = messagebox.askyesno("Konfirmasi", "Apakah Anda yakin ingin menghapus semua riwayat kendaraan?")
+    if jawaban:
+        if db.clear_table():
+            global kendaraan_count
+            kendaraan_count = 0
+            label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
+            messagebox.showinfo("Berhasil", "Semua data riwayat telah dihapus!")
+        else:
+            messagebox.showerror("Error", "Gagal menghapus data dari database.")
 
 # --- UI SETUP ---
 root = tk.Tk()
@@ -75,6 +91,10 @@ label.pack(expand=True, fill='both')
 # Container Tombol Utama (Bawah)
 frame_tombol = tk.Frame(root, bg="#223468")
 frame_tombol.pack(side="bottom", fill="x")
+
+btn_clear_db = tk.Button(frame_tombol, text="CLEAR DATABASE", font=("Arial", 12, "bold"), 
+                         bg="#7f8c8d", fg="white", command=hapus_riwayat_db, padx=20, pady=10)
+btn_clear_db.pack(side="right", padx=10, pady=10)
 
 # Tombol Emergency (Kiri)
 btn_emergency = tk.Button(frame_tombol, text="EMERGENCY EXIT", font=("Roboto", 11, "bold"), 
