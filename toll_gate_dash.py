@@ -12,26 +12,6 @@ except Exception as e:
 
 kendaraan_count = 0 
 
-# --- FUNGSI EKSPOR CSV ---
-def export_to_csv():
-    global kendaraan_count
-    nama_file = "laporan_tol.csv"
-    timestamp_sekarang = time.strftime('%d/%m/%Y %H:%M:%S')
-    
-    try:
-        # 'a' berarti append (menambah data ke baris baru tanpa menghapus data lama)
-        with open(nama_file, mode='a', newline='') as file:
-            writer = csv.writer(file)
-            # Tulis header jika file masih baru/kosong
-            if file.tell() == 0:
-                writer.writerow(["Tanggal & Waktu", "Jumlah Kendaraan Terakhir"])
-            
-            writer.writerow([timestamp_sekarang, kendaraan_count])
-            
-        messagebox.showinfo("Berhasil", f"Data berhasil diekspor ke {nama_file}")
-    except Exception as e:
-        messagebox.showerror("Error", f"Gagal mengekspor data: {e}")
-
 # --- FUNGSI LAINNYA ---
 def update_time():
     current_time = time.strftime('%d/%m/%Y  %H:%M:%S')
@@ -81,15 +61,15 @@ def update_label():
 
 # --- UI SETUP ---
 root = tk.Tk()
-root.title("Toll Gate System")
+root.title("Toll Gate System - #KonektivitasUntukNegeri")
 root.iconbitmap("kemenpu.ico")
 root.geometry("800x650") # Sedikit lebih tinggi untuk tombol baru
 root.config(bg="#ffffff")
 
-label_jam = tk.Label(root, text="", font=("Courier New", 18, "bold"), bg="#223468", fg="white", pady=5)
+label_jam = tk.Label(root, text="", font=("Roboto", 18, "bold"), bg="#223468", fg="white", pady=5)
 label_jam.pack(side="top", fill="x")
 
-label = tk.Label(root, text="Tap Kartu E-Toll", font=("Arial", 50, "bold"), bg="#ffffff", fg="#223468")
+label = tk.Label(root, text="Tap Kartu E-Toll", font=("Roboto", 50, "bold"), bg="#ffffff", fg="#223468")
 label.pack(expand=True, fill='both')
 
 # Container Tombol Utama (Bawah)
@@ -97,22 +77,17 @@ frame_tombol = tk.Frame(root, bg="#223468")
 frame_tombol.pack(side="bottom", fill="x")
 
 # Tombol Emergency (Kiri)
-btn_emergency = tk.Button(frame_tombol, text="EMERGENCY EXIT", font=("Arial", 12, "bold"), 
+btn_emergency = tk.Button(frame_tombol, text="EMERGENCY EXIT", font=("Roboto", 11, "bold"), 
                           bg="#fcb717", fg="white", command=emergency_exit, padx=20, pady=10)
 btn_emergency.pack(side="left", padx=10, pady=10)
 
-# Tombol Ekspor (Tengah) - FITUR BARU
-btn_export = tk.Button(frame_tombol, text="EXPORT CSV", font=("Arial", 12, "bold"), 
-                       bg="#3498db", fg="white", command=export_to_csv, padx=20, pady=10)
-btn_export.pack(side="left", padx=10, pady=10)
-
 # Tombol Reset (Kanan)
-btn_reset = tk.Button(frame_tombol, text="RESET COUNT", font=("Arial", 12, "bold"), 
+btn_reset = tk.Button(frame_tombol, text="RESET COUNT", font=("Roboto", 11, "bold"), 
                       bg="#c0392b", fg="white", command=reset_all, padx=20, pady=10)
-btn_reset.pack(side="right", padx=10, pady=10)
+btn_reset.pack(side="left", padx=10, pady=10)
 
-label_counter = tk.Label(root, text="Kendaraan Lewat: 0", font=("Arial", 20, "bold"), bg="#223468", fg="white", pady=10)
-label_counter.pack(side="bottom", fill="x")
+label_counter = tk.Label(root, text="Kendaraan Lewat: 0", font=("Roboto", 24, "bold"), fg="white", padx=20, pady=10, bg="#3A3B3D")
+label_counter.pack(side="right", padx=10, pady=10)
 
 update_label()
 update_time()
