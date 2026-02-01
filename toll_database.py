@@ -2,8 +2,12 @@ import sqlite3
 from datetime import datetime
 
 class TollDatabase:
-    def __init__(self, db_name="toll_history.db"):
-        self.db_name = db_name
+    def __init__(self, db_name=None):
+        if db_name is None:
+            self.db_name = "toll_manggar.db"
+        else:
+            self.db_name = db_name
+            
         self.init_db()
 
     def init_db(self):
