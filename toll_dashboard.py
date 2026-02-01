@@ -204,7 +204,7 @@ btn_emergency = tk.Button(frame_tombol, text="EMERGENCY EXIT", font=("Roboto", 1
                           bg="#fcb717", fg="white", command=emergency_exit, padx=20, pady=10)
 btn_emergency.pack(side="left", padx=10, pady=10)
 
-btn_web = tk.Button(frame_tombol, text="CCTV TOL BALIKPAPAN SAMARINDA (TRAVOY)", font=("Roboto", 11, "bold"), 
+btn_web = tk.Button(frame_tombol, text="CCTV TOL BALIKPAPAN SAMARINDA (KEMENPU)", font=("Roboto", 11, "bold"), 
                     bg="#2980b9", fg="white", command=cctv_tol_balikpapan_samarinda, padx=20, pady=10)
 btn_web.pack(side="right", padx=10, pady=10)
 
@@ -230,3 +230,4 @@ update_label()
 update_time()
 refresh_table()
 root.mainloop()
+
