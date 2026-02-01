@@ -6,17 +6,53 @@ from tkinter import messagebox # Untuk notifikasi pop-up
 from toll_database import TollDatabase
 import webbrowser
 
+GERBANG_DATA = {
+    "Manggar Utama": "toll_manggar.db",        # Ini Manggar
+    "Karang Joang": "toll_karangjoang.db",    # Ini Karang Joang
+    "Samboja": "toll_samboja.db",   # Ini Samboja
+    "Palaran": "toll_palaran.db"            # Ini Palaran
+}
+
 db = TollDatabase()
 
 # --- INISIALISASI SERIAL ---
 try:
-    ser = serial.Serial('COM12', 9600, timeout=1) 
+    ser = serial.Serial('COM12', 9600, timeout=0.1) 
 except Exception as e:
     print(f"Gagal koneksi: {e}")
     ser = None 
 
 kendaraan_count = db.get_last_id()
 
+last_serial_activity = 0
+
+def update_connection_status():
+    global ser, last_serial_activity
+    
+    # Logika: Jika port terbuka DAN ada aktivitas data dalam 3 detik terakhir
+    is_connected = False
+    if ser and ser.is_open:
+        try:
+            # Kirim sinyal kecil ke Arduino untuk cek apakah kabel masih 'hidup'
+            ser.write(b'\0') 
+            is_connected = True
+        except:
+            is_connected = False
+            ser.close() # Paksa tutup jika kabel dicabut
+            ser = None
+
+    if is_connected:
+        canvas_status.itemconfig(circle_status, fill="#2ecc71") # Hijau
+    else:
+        canvas_status.itemconfig(circle_status, fill="#e74c3c") # Merah
+        # Coba sambung kembali secara otomatis
+        try:
+            ser = serial.Serial('COM12', 9600, timeout=0.1)
+        except:
+            pass
+
+    root.after(2000, update_connection_status)
+    
 # --- FUNGSI LAINNYA --- 
 def update_time():
     current_time = time.strftime('%H:%M:%S %d-%m-%Y')
@@ -67,7 +103,7 @@ def update_label():
                     root.after(7000, reset_to_idle)
         except:
             pass
-    root.after(100, update_label)
+    root.after(50, update_label)
 
 def refresh_table():
     # 1. Hapus data lama di tabel UI
@@ -98,10 +134,20 @@ def hapus_riwayat_db():
             messagebox.showinfo("Berhasil", "Semua data riwayat telah dihapus!")
         else:
             messagebox.showerror("Error", "Gagal menghapus data dari database.")
+            
+def on_gate_change(event):
+    global db, kendaraan_count
+    selected_text = combo_gate.get()
+    db_file = GERBANG_DATA[selected_text]
+    db = TollDatabase(db_file)
+    kendaraan_count = db.get_last_id()
+    label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
+    refresh_table()
+    print(f"Sistem aktif di: {selected_text} ({db_file})")
 
 # --- UI SETUP ---
 root = tk.Tk()
-root.title("Tol Balikpapan Samarinda - #KonektivitasUntukNegeri (Administrator)")
+root.title("Toll Gate Balikpapan Samarinda - #KonektivitasUntukNegeri")
 root.iconbitmap("kemenpu.ico")
 root.geometry("1000x700") # Sedikit lebih tinggi untuk tombol baru
 root.config(bg="#ffffff")
@@ -109,8 +155,16 @@ root.config(bg="#ffffff")
 frame_header = tk.Frame(root, bg="#223468", height=80)
 frame_header.pack(side="top", fill="x")
 
-Label_Proyek = tk.Label(frame_header, text="Toll Gate: Manggar", font=("Roboto", 20, "bold"), bg="#223468", fg="white", pady=5)
-Label_Proyek.pack(side="left", fill="x")
+Label_Proyek = tk.Label(frame_header, text="Toll Gate:", font=("Roboto", 20, "bold"), bg="#223468", fg="white")
+Label_Proyek.pack(side="left", padx=0)
+
+# Ambil daftar nama wilayah saja untuk isi dropdown
+daftar_wilayah = list(GERBANG_DATA.keys()) 
+
+combo_gate = ttk.Combobox(frame_header, values=list(GERBANG_DATA.keys()), state="readonly", font=("Roboto", 12, "bold"), width=20)
+combo_gate.set("Manggar Utama") # Tampilan default awal
+combo_gate.pack(side="left", padx=3)
+combo_gate.bind("<<ComboboxSelected>>", on_gate_change)
 
 label_jam = tk.Label(frame_header, text="", font=("Roboto", 18, "bold"), bg="#223468", fg="white", pady=5)
 label_jam.pack(side="right", fill="x")
@@ -119,7 +173,7 @@ label = tk.Label(root, text="Tap Kartu E-Toll", font=("Roboto", 50, "bold"), bg=
 label.pack(expand=True, fill='both')
 
 frame_tabel = tk.Frame(root, bg="#ffffff")
-frame_tabel.place(x=25, y=420, width=280, height=150)
+frame_tabel.place(x=25, y=470, width=280, height=150)
 
 lbl_recent = tk.Label(frame_tabel, text="Riwayat Terakhir", font=("Roboto", 10, "bold"), bg="#ffffff", fg="#223468")
 lbl_recent.pack(anchor="w")
@@ -150,13 +204,28 @@ btn_emergency = tk.Button(frame_tombol, text="EMERGENCY EXIT", font=("Roboto", 1
                           bg="#fcb717", fg="white", command=emergency_exit, padx=20, pady=10)
 btn_emergency.pack(side="left", padx=10, pady=10)
 
-btn_web = tk.Button(frame_tombol, text="CCTV TOL BALIKPAPAN SAMARINDA (JBS)", font=("Roboto", 11, "bold"), 
+btn_web = tk.Button(frame_tombol, text="CCTV TOL BALIKPAPAN SAMARINDA (TRAVOY)", font=("Roboto", 11, "bold"), 
                     bg="#2980b9", fg="white", command=cctv_tol_balikpapan_samarinda, padx=20, pady=10)
 btn_web.pack(side="right", padx=10, pady=10)
 
 label_counter = tk.Label(root, text="Kendaraan Lewat: 0", font=("Roboto", 24, "bold"), fg="white", padx=20, pady=10, bg="#3A3B3D")
 label_counter.pack(side="right", padx=10, pady=10)
 
+status_container = tk.Frame(root, bg="#1a2a44")
+status_container.pack(anchor="e", pady=5)
+
+status_container = tk.Frame(frame_header, bg="#223468")
+status_container.pack(anchor="e")
+
+label_status_text = tk.Label(status_container, text="Status Gerbang:", font=("Roboto", 9), fg="white", bg="#223468")
+label_status_text.pack(side="left")
+
+canvas_status = tk.Canvas(status_container, width=15, height=15, bg="#223468", highlightthickness=0)
+canvas_status.pack(side="left", padx=5)
+circle_status = canvas_status.create_oval(2, 2, 13, 13, fill="#e74c3c")
+
+
+update_connection_status()
 update_label()
 update_time()
 refresh_table()
