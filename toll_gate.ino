@@ -59,6 +59,18 @@ void palang(int dari, int ke, int jeda) {
   }
 }
 
+// Fungsi untuk menunggu respons dari Python dengan timeout
+char tungguResponPython(unsigned long timeout_ms) {
+  unsigned long startTime = millis();
+  while (millis() - startTime < timeout_ms) {
+    if (Serial.available() > 0) {
+      return Serial.read();
+    }
+    delay(10);
+  }
+  return '\0'; // Timeout, tidak ada respons
+}
+
 void loop() {
   // --- 1. CEK PERINTAH DARI PYTHON (TKINTER) ---
   if (Serial.available() > 0) {
@@ -90,6 +102,9 @@ void loop() {
       digitalWrite(LED_G, LOW);
       digitalWrite(LED_R, HIGH);
     }
+    
+    // ABAIKAN karakter 'V' dan 'I' yang masuk di sini 
+    // (akan diproses di bagian validasi RFID)
   }
 
   mfrc522.PCD_StopCrypto1();
@@ -105,22 +120,31 @@ void loop() {
     return;
   }
   
-  Serial.print("E-Toll :");
-  String content= "";
-  byte letter;
+  // --- 2. BACA UID KARTU RFID ---
+  String uid_str = "";
   for (byte i = 0; i < mfrc522.uid.size; i++) 
   {
-     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-     Serial.print(mfrc522.uid.uidByte[i], HEX);
-     content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
-     content.concat(String(mfrc522.uid.uidByte[i], HEX));
+     if (i > 0) uid_str += " ";
+     if (mfrc522.uid.uidByte[i] < 0x10) uid_str += "0";
+     uid_str += String(mfrc522.uid.uidByte[i], HEX);
   }
-  Serial.println();
-  Serial.print("Pesan : ");
-  content.toUpperCase();
-  if (content.substring(1) == "D3 3E 2C DD") //UID
-  {
-    Serial.println("Tap E-Toll Berhasil");
+  uid_str.toUpperCase();
+  
+  // Tampilkan UID ke Serial Monitor (opsional untuk debugging)
+  Serial.print("E-Toll : ");
+  Serial.println(uid_str);
+  
+  // --- 3. KIRIM UID KE PYTHON UNTUK VALIDASI ---
+  Serial.print("UID:");
+  Serial.println(uid_str);
+  
+  // --- 4. TUNGGU RESPONS DARI PYTHON ---
+  // 'V' = Valid, 'I' = Invalid
+  char respons = tungguResponPython(2000); // Timeout 2 detik
+  
+  if (respons == 'V') {
+    // --- KARTU VALID ---
+    Serial.println("Pesan : Tap E-Toll Berhasil");
     Serial.println();
     delay(500);
     tone(BUZZER, 2500);
@@ -129,6 +153,7 @@ void loop() {
     digitalWrite(LED_G, HIGH);
     digitalWrite(LED_R, LOW);
     palang(6, 103, 2);
+    
     Serial.println("Status : Menunggu Kendaraan...");
     while (bacaJarak() > JARAK_DETEKSI) {
       delay(100); 
@@ -137,7 +162,7 @@ void loop() {
     
     Serial.println("Status : Kendaraan Melintas...");
     
-    // 2. Tunggu sampai mobil sudah lewat (jarak kembali menjauh)
+    // Tunggu sampai mobil sudah lewat (jarak kembali menjauh)
     while (bacaJarak() <= JARAK_DETEKSI) {
       delay(100);
     }
@@ -146,31 +171,40 @@ void loop() {
     palang(103, 6, 2);
     digitalWrite(LED_G, LOW);
     digitalWrite(LED_R, HIGH);
-  }
- 
- else {
-  Serial.println("Tap E-Toll Gagal");
-  gagalCount++;
-
-  if (gagalCount >= 5) {
-    Serial.println("Peringatan: Gagal 5 Kali!");
     
-    unsigned long startTime = millis();
-    while (millis() - startTime < 5000) {
-      tone(BUZZER, 2500);
-      digitalWrite(LED_R, LOW);
-      delay(200);
-      noTone(BUZZER);
-      digitalWrite(LED_R, HIGH);
-      delay(200);
-    }
-    
-    gagalCount = 0;
+    gagalCount = 0; // Reset counter gagal
   } 
+  else if (respons == 'I') {
+    // --- KARTU TIDAK VALID ---
+    Serial.println("Pesan : Tap E-Toll Gagal");
+    gagalCount++;
+
+    if (gagalCount >= 5) {
+      Serial.println("Peringatan: Gagal 5 Kali!");
+      
+      unsigned long startTime = millis();
+      while (millis() - startTime < 5000) {
+        tone(BUZZER, 2500);
+        digitalWrite(LED_R, LOW);
+        delay(200);
+        noTone(BUZZER);
+        digitalWrite(LED_R, HIGH);
+        delay(200);
+      }
+      
+      gagalCount = 0;
+    } 
+    else {
+      tone(BUZZER, 2500);
+      delay(500);
+      noTone(BUZZER);
+    }
+  }
   else {
-    tone(BUZZER, 2500);
-    delay(500);
+    // --- TIMEOUT / TIDAK ADA RESPONS ---
+    Serial.println("Pesan : Koneksi Python Terputus");
+    tone(BUZZER, 1000);
+    delay(300);
     noTone(BUZZER);
   }
-}
 }
