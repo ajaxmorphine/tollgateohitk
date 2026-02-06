@@ -1,1 +1,4 @@
 *.json linguist-detectable=true
+*.db linguist-detectable=true
+*.sqlite linguist-detectable=true
+*.db linguist-language=SQL
