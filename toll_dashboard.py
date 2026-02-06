@@ -217,7 +217,7 @@ btn_emergencyclose = tk.Button(frame_tombol, text = "EMERGENCY CLOSE", font=("Ro
                             bg="#d35400", fg="white", command=emergency_close, padx=20, pady=10) 
 btn_emergencyclose.pack(side="left", padx=10, pady=10)
 
-btn_web = tk.Button(frame_tombol, text="CCTV TOL BALIKPAPAN SAMARINDA", font=("Roboto", 11, "bold"), 
+btn_web = tk.Button(frame_tombol, text="CCTV", font=("Roboto", 11, "bold"), 
                     bg="#2980b9", fg="white", command=cctv_tol_balikpapan_samarinda, padx=20, pady=10)
 btn_web.pack(side="right", padx=10, pady=10)
 
