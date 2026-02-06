@@ -65,15 +65,15 @@ void loop() {
     char perintah = Serial.read();
 
     if (perintah == 'E') { 
-      // EMERGENCY EXIT
-      Serial.println("Pesan : Emergency"); 
+      // EMERGENCY OPEN
+      Serial.println("Pesan : Emergency Open"); 
       digitalWrite(LED_G, HIGH);
       digitalWrite(LED_R, LOW);
       palang(6, 103, 2); // Buka cepat
     }
     
     else if (perintah == 'C') {
-      Serial.println("Pesan : Gerbang ditutup");
+      Serial.println("Pesan : Emergency Close");
       palang(103, 6, 2); // Tutup kembali
       digitalWrite(LED_G, LOW);
       digitalWrite(LED_R, HIGH);
