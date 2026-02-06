@@ -12,6 +12,8 @@
 MFRC522 mfrc522(SS_PIN, RST_PIN);   
 Servo myServo; 
 int gagalCount = 0;
+
+const int JARAK_DETEKSI = 15;
  
 void setup() 
 {
@@ -30,6 +32,17 @@ void setup()
   Serial.println();
   digitalWrite(LED_R, HIGH);
 
+}
+
+// Fungsi untuk membaca jarak ultrasonik
+long bacaJarak() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  long durasi = pulseIn(ECHO_PIN, HIGH);
+  return durasi * 0.034 / 2;
 }
 
 void palang(int dari, int ke, int jeda) {
@@ -57,11 +70,14 @@ void loop() {
       digitalWrite(LED_G, HIGH);
       digitalWrite(LED_R, LOW);
       palang(6, 103, 2); // Buka cepat
-      delay(3000);       // Buka selama 3 detik
+
+    else if (perintah == 'c' {
+      Serial.println("Pesan : Gerbang ditutup");
       palang(103, 6, 4); // Tutup kembali
       digitalWrite(LED_G, LOW);
       digitalWrite(LED_R, HIGH);
-    } 
+     }
+   
     
     else if (perintah == 'R') {
       // RESET CONTROL
@@ -112,7 +128,20 @@ void loop() {
     digitalWrite(LED_G, HIGH);
     digitalWrite(LED_R, LOW);
     palang(6, 103, 4);
-    delay(5000);
+    Serial.println("Status : Menunggu Kendaraan...");
+    while (bacaJarak() > JARAK_DETEKSI) {
+      delay(100); 
+      // Safety: Tetap cek serial jika butuh reset/emergency saat nunggu
+    }
+    
+    Serial.println("Status : Kendaraan Melintas...");
+    
+    // 2. Tunggu sampai mobil sudah lewat (jarak kembali menjauh)
+    while (bacaJarak() <= JARAK_DETEKSI) {
+      delay(100);
+    }
+    
+    Serial.println("Status : Kendaraan Sudah Lewat");
     palang(103, 6, 4);
     digitalWrite(LED_G, LOW);
     digitalWrite(LED_R, HIGH);
