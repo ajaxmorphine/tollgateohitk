@@ -5,6 +5,8 @@ import time
 from tkinter import messagebox # Untuk notifikasi pop-up
 from toll_database import TollDatabase
 import webbrowser
+import json
+import os
 
 GERBANG_DATA = {
     "Manggar Utama": "toll_manggar.db",        # Ini Manggar
@@ -14,6 +16,37 @@ GERBANG_DATA = {
 }
 
 db = TollDatabase()
+
+# --- LOAD KARTU TERDAFTAR DARI JSON ---
+def load_valid_cards():
+    """Membaca file UID.json dan mengembalikan list kartu yang valid"""
+    try:
+        json_path = "UID.json"
+        if os.path.exists(json_path):
+            with open(json_path, 'r') as file:
+                data = json.load(file)
+                return data.get("kartu_terdaftar", [])
+        else:
+            messagebox.showwarning("Peringatan", "File UID.json tidak ditemukan!")
+            return []
+    except Exception as e:
+        messagebox.showerror("Error", f"Gagal membaca UID.json: {e}")
+        return []
+
+# Inisialisasi daftar kartu valid
+VALID_CARDS = load_valid_cards()
+
+def reload_valid_cards():
+    """Fungsi untuk reload kartu dari JSON (jika ada perubahan)"""
+    global VALID_CARDS
+    VALID_CARDS = load_valid_cards()
+    messagebox.showinfo("Info", f"Kartu berhasil dimuat ulang!\nTotal kartu terdaftar: {len(VALID_CARDS)}")
+
+def is_card_valid(uid):
+    """Mengecek apakah UID kartu ada dalam daftar kartu terdaftar"""
+    # Normalisasi format UID (hapus spasi ekstra, uppercase)
+    uid_clean = uid.strip().upper()
+    return uid_clean in VALID_CARDS
 
 # --- INISIALISASI SERIAL ---
 try:
@@ -86,9 +119,26 @@ def update_label():
     if ser and ser.in_waiting > 0:
         try:
             raw_data = ser.readline().decode('utf-8').strip()
-            if "Pesan : " in raw_data:
+            
+            # --- PENANGANAN UID DARI ARDUINO ---
+            if raw_data.startswith("UID:"):
+                # Format: "UID:D3 3E 2C DD"
+                uid_detected = raw_data.split("UID:")[1].strip()
+                print(f"[DEBUG] UID Terdeteksi: {uid_detected}")
+                
+                # Validasi dengan JSON
+                if is_card_valid(uid_detected):
+                    print(f"[DEBUG] UID Valid: {uid_detected}")
+                    ser.write(b'V')  # Kirim 'V' untuk Valid
+                else:
+                    print(f"[DEBUG] UID Tidak Valid: {uid_detected}")
+                    ser.write(b'I')  # Kirim 'I' untuk Invalid
+            
+            # --- PENANGANAN PESAN STATUS ---
+            elif "Pesan : " in raw_data:
                 msg = raw_data.split("Pesan : ")[1].strip()
                 label.config(text=msg)
+                
                 if "Berhasil" in msg:
                     db.insert_data("E-TOLL-USER")
                     kendaraan_count += 1
@@ -97,20 +147,24 @@ def update_label():
                     label.config(bg="#2ecc71", fg="white")
                     refresh_table()
                     root.after(7000, reset_to_idle)
+                    
                 elif "Gagal" in msg:
                     root.config(bg="#e74c3c")
                     label.config(bg="#e74c3c", fg="white")
                     root.after(7000, reset_to_idle)
+                    
                 elif "Emergency Open" in msg:
                     root.config(bg="#f39c12")
                     label.config(bg="#f39c12", fg="white")
                     root.after(7000, reset_to_idle)
+                    
                 elif "Emergency Close" in msg:
                     root.config(bg="#d35400")
                     label.config(bg="#d35400", fg="white")
                     root.after(7000, reset_to_idle)
-        except:
-            pass
+        except Exception as e:
+            print(f"[ERROR] Gagal proses serial: {e}")
+            
     root.after(50, update_label)
 
 def refresh_table():
@@ -157,7 +211,7 @@ def on_gate_change(event):
 root = tk.Tk()
 root.title("Toll Gate Balikpapan Samarinda - #KonektivitasUntukNegeri")
 root.iconbitmap("kemenpu.ico")
-root.geometry("1000x700") # Sedikit lebih tinggi untuk tombol baru
+root.geometry("1150x700") # Sedikit lebih tinggi untuk tombol baru
 root.config(bg="#ffffff")
 
 frame_header = tk.Frame(root, bg="#223468", height=80)
@@ -217,6 +271,11 @@ btn_emergencyclose = tk.Button(frame_tombol, text = "EMERGENCY CLOSE", font=("Ro
                             bg="#d35400", fg="white", command=emergency_close, padx=20, pady=10) 
 btn_emergencyclose.pack(side="left", padx=10, pady=10)
 
+# TOMBOL RELOAD KARTU JSON (BARU)
+btn_reload_json = tk.Button(frame_tombol, text="RELOAD KARTU", font=("Roboto", 11, "bold"), 
+                            bg="#16a085", fg="white", command=reload_valid_cards, padx=20, pady=10)
+btn_reload_json.pack(side="left", padx=10, pady=10)
+
 btn_web = tk.Button(frame_tombol, text="CCTV", font=("Roboto", 11, "bold"), 
                     bg="#2980b9", fg="white", command=cctv_tol_balikpapan_samarinda, padx=20, pady=10)
 btn_web.pack(side="right", padx=10, pady=10)
@@ -237,6 +296,9 @@ canvas_status = tk.Canvas(status_container, width=15, height=15, bg="#223468", h
 canvas_status.pack(side="left", padx=5)
 circle_status = canvas_status.create_oval(2, 2, 13, 13, fill="#e74c3c")
 
+# Label info kartu terdaftar (BARU)
+# label_info_kartu = tk.Label(root, text=f"Kartu Terdaftar: {len(VALID_CARDS)}", font=("Roboto", 12, "bold"), fg="white", bg="#223468", padx=10, pady=5)
+# label_info_kartu.place(x=320, y=475)
 
 update_connection_status()
 update_label()
