@@ -59,8 +59,12 @@ def update_time():
     label_jam.config(text=current_time)
     label_jam.after(1000, update_time)
 
-def emergency_exit():
+def emergency_open():
     if ser: ser.write(b'E') 
+    label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
+    
+def emergency_close():
+    if ser: ser.write(b'C') 
     label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
 
 def reset_all():
@@ -97,9 +101,13 @@ def update_label():
                     root.config(bg="#e74c3c")
                     label.config(bg="#e74c3c", fg="white")
                     root.after(7000, reset_to_idle)
-                elif "Emergency" in msg:
+                elif "Emergency Open" in msg:
                     root.config(bg="#f39c12")
                     label.config(bg="#f39c12", fg="white")
+                    root.after(7000, reset_to_idle)
+                elif "Emergency Close" in msg:
+                    root.config(bg="#2c3e50")
+                    label.config(bg="#2c3e50", fg="white")
                     root.after(7000, reset_to_idle)
         except:
             pass
@@ -200,11 +208,15 @@ btn_reset = tk.Button(frame_tombol, text="RESET COUNTER", font=("Roboto", 11, "b
                       bg="#c0392b", fg="white", command=reset_all, padx=20, pady=10)
 btn_reset.pack(side="left", padx=10, pady=10)
 
-btn_emergency = tk.Button(frame_tombol, text="EMERGENCY EXIT", font=("Roboto", 11, "bold"), 
-                          bg="#fcb717", fg="white", command=emergency_exit, padx=20, pady=10)
-btn_emergency.pack(side="left", padx=10, pady=10)
+btn_emergencyopen = tk.Button(frame_tombol, text="EMERGENCY OPEN", font=("Roboto", 11, "bold"), 
+                          bg="#fcb717", fg="white", command=emergency_open, padx=20, pady=10)
+btn_emergencyopen.pack(side="left", padx=10, pady=10)
 
-btn_web = tk.Button(frame_tombol, text="CCTV TOL BALIKPAPAN SAMARINDA (KEMENPU)", font=("Roboto", 11, "bold"), 
+btn_emergencyclose = tk.Button(frame_tombol, text = "EMERGENCY CLOSE", font=("Roboto", 11, "bold"),
+                            bg="#d35400", fg="white", command=emergency_close, padx=20, pady=10) 
+btn_emergencyclose.pack(side="left", padx=10, pady=10)
+
+btn_web = tk.Button(frame_tombol, text="CCTV", font=("Roboto", 11, "bold"), 
                     bg="#2980b9", fg="white", command=cctv_tol_balikpapan_samarinda, padx=20, pady=10)
 btn_web.pack(side="right", padx=10, pady=10)
 
@@ -230,4 +242,3 @@ update_label()
 update_time()
 refresh_table()
 root.mainloop()
-
