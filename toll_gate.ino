@@ -1,4 +1,3 @@
-
 #include <SPI.h>
 #include <MFRC522.h>
 #include <Servo.h>
@@ -75,7 +74,7 @@ void loop() {
     
     else if (perintah == 'C') {
       Serial.println("Pesan : Gerbang ditutup");
-      palang(103, 6, 4); // Tutup kembali
+      palang(103, 6, 2); // Tutup kembali
       digitalWrite(LED_G, LOW);
       digitalWrite(LED_R, HIGH);
      }
@@ -129,7 +128,7 @@ void loop() {
     noTone(BUZZER);
     digitalWrite(LED_G, HIGH);
     digitalWrite(LED_R, LOW);
-    palang(6, 103, 4);
+    palang(6, 103, 2);
     Serial.println("Status : Menunggu Kendaraan...");
     while (bacaJarak() > JARAK_DETEKSI) {
       delay(100); 
@@ -144,7 +143,7 @@ void loop() {
     }
     
     Serial.println("Status : Kendaraan Sudah Lewat");
-    palang(103, 6, 4);
+    palang(103, 6, 2);
     digitalWrite(LED_G, LOW);
     digitalWrite(LED_R, HIGH);
   }
