@@ -71,7 +71,7 @@ void loop() {
       digitalWrite(LED_R, LOW);
       palang(6, 103, 2); // Buka cepat
 
-    else if (perintah == 'c' {
+    else if (perintah == 'C' {
       Serial.println("Pesan : Gerbang ditutup");
       palang(103, 6, 4); // Tutup kembali
       digitalWrite(LED_G, LOW);
