@@ -13,7 +13,7 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 Servo myServo; 
 int gagalCount = 0;
 
-const int JARAK_DETEKSI = 15;
+const int JARAK_DETEKSI = 13;
  
 void setup() 
 {
