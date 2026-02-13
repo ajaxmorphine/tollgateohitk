@@ -58,6 +58,7 @@ except Exception as e:
 kendaraan_count = db.get_last_id()
 
 last_serial_activity = 0
+gate_is_open = False  # Status gerbang: False = Tertutup, True = Terbuka
 
 def update_connection_status():
     global ser, last_serial_activity
@@ -93,19 +94,44 @@ def update_time():
     label_jam.after(1000, update_time)
 
 def emergency_open():
-    if ser: ser.write(b'E') 
-    label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
+    global gate_is_open
+    
+    # Cek apakah gerbang sudah terbuka
+    if gate_is_open:
+        messagebox.showwarning("Peringatan", "Gerbang sudah dalam kondisi TERBUKA!\nTidak dapat membuka gerbang yang sudah terbuka.")
+        return
+    
+    if ser: 
+        ser.write(b'E')
+        gate_is_open = True  # Update status gerbang
+        label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
+        label_gate_status.config(text="EMERGENCY: TERBUKA", bg="#27ae60")  # Hijau untuk terbuka
+        print("[INFO] Emergency OPEN executed - Gerbang TERBUKA")
     
 def emergency_close():
-    if ser: ser.write(b'C') 
-    label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
+    global gate_is_open
+    
+    # Cek apakah gerbang sudah tertutup
+    if not gate_is_open:
+        messagebox.showwarning("Peringatan", "Gerbang sudah dalam kondisi TERTUTUP!\nTidak dapat menutup gerbang yang sudah tertutup.")
+        return
+    
+    if ser: 
+        ser.write(b'C')
+        gate_is_open = False  # Update status gerbang
+        label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
+        label_gate_status.config(text="EMERGENCY: TERTUTUP", bg="#c0392b")  # Merah untuk tertutup
+        print("[INFO] Emergency CLOSE executed - Gerbang TERTUTUP")
 
 def reset_all():
-    global kendaraan_count
+    global kendaraan_count, gate_is_open
     if ser: ser.write(b'R') 
     kendaraan_count = 0 
+    gate_is_open = False  # Reset state gerbang ke tertutup
     label_counter.config(text=f"Kendaraan Lewat: {kendaraan_count}")
+    label_gate_status.config(text="EMERGENCY: TERTUTUP", bg="#c0392b")
     reset_to_idle()
+    print("[INFO] System RESET - Gerbang kembali ke status TERTUTUP")
 
 def reset_to_idle():
     root.config(bg="#ffffff")
@@ -115,7 +141,7 @@ def cctv_tol_balikpapan_samarinda():
     webbrowser.open("https://nataru.pu.go.id/cctv-tol?id_ruas=balikpapan-samarinda")
 
 def update_label():
-    global kendaraan_count
+    global kendaraan_count, gate_is_open
     if ser and ser.in_waiting > 0:
         try:
             raw_data = ser.readline().decode('utf-8').strip()
@@ -146,21 +172,29 @@ def update_label():
                     root.config(bg="#2ecc71")
                     label.config(bg="#2ecc71", fg="white")
                     refresh_table()
+                    gate_is_open = False  # Gerbang otomatis tertutup setelah transaksi berhasil
+                    label_gate_status.config(text="EMERGENCY: TERTUTUP", bg="#c0392b")
                     root.after(7000, reset_to_idle)
                     
                 elif "Gagal" in msg:
                     root.config(bg="#e74c3c")
                     label.config(bg="#e74c3c", fg="white")
+                    gate_is_open = False  # Gerbang tetap tertutup jika gagal
+                    label_gate_status.config(text="EMERGENCY: TERTUTUP", bg="#c0392b")
                     root.after(7000, reset_to_idle)
                     
                 elif "Emergency Open" in msg:
                     root.config(bg="#f39c12")
                     label.config(bg="#f39c12", fg="white")
+                    gate_is_open = True  # Update state: gerbang terbuka
+                    label_gate_status.config(text="EMERGENCY: TERBUKA", bg="#27ae60")
                     root.after(7000, reset_to_idle)
                     
                 elif "Emergency Close" in msg:
                     root.config(bg="#d35400")
                     label.config(bg="#d35400", fg="white")
+                    gate_is_open = False  # Update state: gerbang tertutup
+                    label_gate_status.config(text="EMERGENCY: TERTUTUP", bg="#c0392b")
                     root.after(7000, reset_to_idle)
         except Exception as e:
             print(f"[ERROR] Gagal proses serial: {e}")
@@ -282,6 +316,10 @@ btn_web.pack(side="right", padx=10, pady=10)
 
 label_counter = tk.Label(root, text="Kendaraan Lewat: 0", font=("Roboto", 24, "bold"), fg="white", padx=20, pady=10, bg="#3A3B3D")
 label_counter.pack(side="right", padx=10, pady=10)
+
+# Label status gerbang (BARU)
+label_gate_status = tk.Label(root, text="STATUS: TERTUTUP", font=("Roboto", 16, "bold"), fg="white", padx=15, pady=8, bg="#c0392b")
+label_gate_status.pack(side="right", padx=10, pady=10)
 
 status_container = tk.Frame(root, bg="#1a2a44")
 status_container.pack(anchor="e", pady=5)
