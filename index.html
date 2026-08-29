@@ -8,8 +8,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Lucide Icons UMD Build (Versi Stabil) -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.min.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
 
@@ -90,7 +90,7 @@
 
   </main>
 
-  <!-- FOOTER / CONTROL BAR -->
+  <!-- FOOTER -->
   <footer class="bg-slate-800 border-t border-slate-700 px-6 py-4">
     <div class="container mx-auto flex flex-wrap justify-between items-center gap-4">
       <div class="flex items-center space-x-2 text-xs text-slate-400">
@@ -111,10 +111,13 @@
     const SUPABASE_URL = "https://jpqyeqcxiseswkoxnzrd.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcXllcWN4aXNlc3drb3huenJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MDU0MDIsImV4cCI6MjEwMzQ4MTQwMn0.sPNRkjKHu2SlHyAn3qdtbFxhv4zO-exRiBclHzym2WI";
     
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Naming diganti 'sbClient' agar tidak bentrok dengan namespace 'supabase' bawaan CDN
+    const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // Inisialisasi ikon Lucide
-    lucide.createIcons();
+    if (window.lucide) {
+      lucide.createIcons();
+    }
 
     // 2. JAM REAL-TIME
     function updateClock() {
@@ -145,7 +148,7 @@
     async function fetchTollData() {
       try {
         // Ambil 5 riwayat transaksi terakhir
-        const { data, error } = await supabase
+        const { data, error } = await sbClient
           .from('riwayat_tol')
           .select('*')
           .order('created_at', { ascending: false })
@@ -154,7 +157,7 @@
         if (error) throw error;
 
         // Ambil total count kendaraan
-        const { count, error: countError } = await supabase
+        const { count, error: countError } = await sbClient
           .from('riwayat_tol')
           .select('id', { count: 'exact', head: true });
 
