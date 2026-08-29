@@ -1,94 +1,155 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Toll Gate - Cloud Monitoring</title>
-  <!-- Tailwind CSS CDN -->
+
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Konfigurasi Tailwind CSS untuk dark mode kelas
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Lucide Icons UMD Build (Versi Stabil) -->
+  <!-- Lucide Icons UMD Build -->
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.min.js"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col justify-between transition-colors duration-300">
 
   <!-- HEADER -->
-  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex flex-wrap justify-between items-center shadow-lg">
-    <div class="flex items-center space-x-3">
-      <i data-lucide="shield-check" class="w-8 h-8 text-blue-400"></i>
-      <h1 class="text-xl md:text-2xl font-bold tracking-wide text-white">
-        Toll Gate System <span class="text-xs bg-blue-600 px-2 py-1 rounded-full text-blue-100 font-normal ml-2">Cloud Live</span>
-      </h1>
-    </div>
-    
-    <div class="flex items-center space-x-4 mt-2 md:mt-0">
-      <div class="flex items-center space-x-2">
-        <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span class="text-xs text-slate-400 font-medium hidden sm:inline">Supabase Connected</span>
-      </div>
+  <header class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700/80 sticky top-0 z-40 px-4 sm:px-6 py-4 transition-colors duration-300 shadow-sm">
+    <div class="container mx-auto flex flex-wrap justify-between items-center gap-4">
       
-      <!-- TOMBOL RESET DATABASE DENGAN PIN -->
-      <button onclick="hapusDanResetDatabase()" 
-              class="bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
-        <i data-lucide="trash-2" class="w-4 h-4"></i>
-        <span>Reset Database</span>
-      </button>
-
-      <div id="clock" class="text-lg font-mono font-bold text-blue-400 bg-slate-900/60 px-3 py-1 rounded border border-slate-700">
-        00:00:00
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-blue-500/10 dark:bg-blue-400/10 rounded-xl text-blue-600 dark:text-blue-400">
+          <i data-lucide="shield-check" class="w-7 h-7"></i>
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            Toll Gate System
+            <span class="text-[10px] uppercase font-bold tracking-wider bg-blue-100 dark:bg-blue-600/30 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-500/30">
+              Cloud Live
+            </span>
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Real-time IoT Gate Control & Monitoring</p>
+        </div>
       </div>
+
+      <!-- Controls & Status Header -->
+      <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
+        <!-- Supabase Status Badge -->
+        <div class="hidden md:flex items-center space-x-2 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-xs text-slate-600 dark:text-slate-300 font-medium">Supabase Connected</span>
+        </div>
+
+        <!-- Theme Switcher Button -->
+        <button id="theme-toggle" onclick="toggleTheme()" type="button" aria-label="Toggle Theme"
+                class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 transition">
+          <i id="theme-toggle-dark-icon" data-lucide="moon" class="w-4 h-4 hidden"></i>
+          <i id="theme-toggle-light-icon" data-lucide="sun" class="w-4 h-4 hidden"></i>
+        </button>
+
+        <!-- Reset Database Button -->
+        <button onclick="hapusDanResetDatabase()" 
+                class="bg-rose-500/10 hover:bg-rose-600 text-rose-600 dark:text-rose-300 hover:text-white border border-rose-200 dark:border-rose-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Reset Database</span>
+        </button>
+
+        <!-- Live Clock -->
+        <div id="clock" class="text-sm sm:text-base font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-blue-200 dark:border-slate-700">
+          00:00:00
+        </div>
+      </div>
+
     </div>
   </header>
 
   <!-- MAIN CONTENT AREA -->
-  <main class="container mx-auto px-4 py-6 flex-grow flex flex-col justify-center items-center">
+  <main class="container mx-auto px-4 py-8 flex-grow flex flex-col justify-center items-center">
     
-    <!-- BIG STATUS CARD -->
-    <div id="status-card" class="w-full max-w-3xl bg-slate-800 border-2 border-slate-700 rounded-2xl p-8 text-center shadow-2xl transition-all duration-500 my-auto">
-      <p class="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-2">Status Gerbang Utama</p>
-      <h2 id="status-text" class="text-4xl md:text-6xl font-black text-slate-200 tracking-tight">
+    <!-- BIG STATUS BANNER CARD -->
+    <div id="status-card" class="w-full max-w-3xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700/80 rounded-3xl p-8 sm:p-12 text-center shadow-xl dark:shadow-2xl transition-all duration-500 my-auto">
+      <p class="text-xs sm:text-sm font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-2">Status Gerbang Utama</p>
+      <h2 id="status-text" class="text-3xl sm:text-5xl md:text-6xl font-black text-slate-800 dark:text-slate-100 tracking-tight transition-all">
         Tap Kartu E-Toll
       </h2>
-      <p id="status-subtext" class="text-slate-400 mt-3 text-sm">Menunggu transaksi kendaraan dari sensor RFID...</p>
+      <p id="status-subtext" class="text-slate-500 dark:text-slate-400 mt-3 text-sm sm:text-base">
+        Menunggu transaksi kendaraan dari sensor RFID...
+      </p>
     </div>
 
     <!-- STATS & RECENT TRANSACTIONS GRID -->
     <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
       
       <!-- COUNTER CARD -->
-      <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 flex flex-col justify-between shadow-lg">
+      <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-6 flex flex-col justify-between shadow-md dark:shadow-lg transition-colors duration-300">
         <div>
-          <div class="flex items-center justify-between text-slate-400 mb-2">
+          <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
             <span class="text-xs font-bold uppercase tracking-wider">Total Kendaraan</span>
-            <i data-lucide="car" class="w-5 h-5 text-blue-400"></i>
+            <div class="p-2 bg-blue-500/10 rounded-lg text-blue-500">
+              <i data-lucide="car" class="w-5 h-5"></i>
+            </div>
           </div>
-          <h3 id="vehicle-count" class="text-5xl font-extrabold text-white">0</h3>
+          <h3 id="vehicle-count" class="text-5xl font-extrabold text-slate-900 dark:text-white mt-2">0</h3>
         </div>
-        <p class="text-xs text-slate-500 mt-4">Terekam secara otomatis di Supabase Cloud</p>
+        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+          <span class="text-xs text-slate-400 dark:text-slate-500">Hanya Transaksi Berhasil</span>
+          <span class="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded">Verified</span>
+        </div>
       </div>
 
-      <!-- RECENT TABLE (2 COLUMNS SPAN) -->
-      <div class="md:col-span-2 bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
+      <!-- RECENT TABLE CARD -->
+      <div class="md:col-span-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-6 shadow-md dark:shadow-lg transition-colors duration-300">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-            <i data-lucide="history" class="w-4 h-4 text-blue-400"></i>
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-blue-500"></i>
             Riwayat Transaksi Terakhir
           </h3>
-          <span class="text-xs text-slate-500">Live Auto-Update</span>
+          <span class="text-[11px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+            Live Auto-Update
+          </span>
         </div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-slate-900/50 text-slate-400 text-xs uppercase border-b border-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-xs uppercase border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th class="py-2.5 px-3">Waktu</th>
-                <th class="py-2.5 px-3">UID Kartu</th>
-                <th class="py-2.5 px-3">Status</th>
+                <th class="py-3 px-4 rounded-l-lg">Waktu</th>
+                <th class="py-3 px-4">UID Kartu</th>
+                <th class="py-3 px-4 rounded-r-lg">Status</th>
               </tr>
             </thead>
-            <tbody id="transaction-table" class="divide-y divide-slate-700/50">
+            <tbody id="transaction-table" class="divide-y divide-slate-100 dark:divide-slate-700/50">
               <tr>
-                <td colspan="3" class="py-4 text-center text-slate-500 italic">Memuat data transaksi...</td>
+                <td colspan="3" class="py-6 text-center text-slate-400 italic">Memuat data transaksi...</td>
               </tr>
             </tbody>
           </table>
@@ -100,14 +161,14 @@
   </main>
 
   <!-- FOOTER -->
-  <footer class="bg-slate-800 border-t border-slate-700 px-6 py-4">
+  <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700/80 px-6 py-4 transition-colors duration-300">
     <div class="container mx-auto flex flex-wrap justify-between items-center gap-4">
-      <div class="flex items-center space-x-2 text-xs text-slate-400">
-        <i data-lucide="info" class="w-4 h-4 text-slate-500"></i>
-        <span>Dashboard dikoneksikan langsung ke NodeMCU ESP8266 via Database Supabase.</span>
+      <div class="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+        <i data-lucide="info" class="w-4 h-4 text-slate-400 dark:text-slate-500"></i>
+        <span>Dashboard terkoneksi secara cloud dengan NodeMCU ESP8266 & Supabase DB.</span>
       </div>
-      <a href="https://binamarga.pu.go.id/contents/cctv_tol/?id_ruas=balikpapan-samarinda" target="_blank" 
-         class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition shadow">
+      <a href="https://binamarga.pu.go.id/contents/cctv_tol/?id_ruas=balikpapan-samarinda" target="_blank" rel="noopener noreferrer" 
+         class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 transition shadow-md shadow-blue-500/20">
         <i data-lucide="video" class="w-4 h-4"></i>
         <span>CCTV Tol Balikpapan-Samarinda</span>
       </a>
@@ -116,20 +177,66 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    // 1. KONFIGURASI SUPABASE & ADMIN PIN
+    // -------------------------------------------------------------
+    // 1. TEMA DARK / LIGHT LOGIC
+    // -------------------------------------------------------------
+    const darkIcon = document.getElementById('theme-toggle-dark-icon');
+    const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+    function applyTheme(isDark) {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        darkIcon.classList.add('hidden');
+        lightIcon.classList.remove('hidden');
+      } else {
+        document.documentElement.classList.remove('dark');
+        lightIcon.classList.add('hidden');
+        darkIcon.classList.remove('hidden');
+      }
+    }
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('color-theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        applyTheme(true);
+      } else {
+        applyTheme(false);
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(!isDark);
+      localStorage.setItem('color-theme', !isDark ? 'dark' : 'light');
+    }
+
+    // Jalankan inisialisasi tema saat awal muat
+    initTheme();
+
+    // Dengarkan perubahan tema sistem secara otomatis jika pengguna belum memilih manual
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('color-theme')) {
+        applyTheme(e.matches);
+      }
+    });
+
+    // -------------------------------------------------------------
+    // 2. KONFIGURASI SUPABASE & PIN ADMIN
+    // -------------------------------------------------------------
     const SUPABASE_URL = "https://jpqyeqcxiseswkoxnzrd.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcXllcWN4aXNlc3drb3huenJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MDU0MDIsImV4cCI6MjEwMzQ4MTQwMn0.sPNRkjKHu2SlHyAn3qdtbFxhv4zO-exRiBclHzym2WI";
-    
-    // Kata sandi untuk mereset riwayat database (Bisa diubah sesuai keinginan)
     const ADMIN_PIN = "1234";
 
     const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Inisialisasi Ikon Lucide
     if (window.lucide) {
       lucide.createIcons();
     }
 
-    // 2. JAM REAL-TIME
+    // -------------------------------------------------------------
+    // 3. JAM REAL-TIME
+    // -------------------------------------------------------------
     function updateClock() {
       const now = new Date();
       const timeStr = now.toLocaleTimeString('id-ID', { hour12: false });
@@ -138,7 +245,9 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 3. ELEMEN UI
+    // -------------------------------------------------------------
+    // 4. LOGIKA DASHBOARD & REALTIME DATA
+    // -------------------------------------------------------------
     const statusCard = document.getElementById('status-card');
     const statusText = document.getElementById('status-text');
     const statusSubtext = document.getElementById('status-subtext');
@@ -148,15 +257,15 @@
     let resetTimeout = null;
 
     function resetToIdle() {
-      statusCard.className = "w-full max-w-3xl bg-slate-800 border-2 border-slate-700 rounded-2xl p-8 text-center shadow-2xl transition-all duration-500 my-auto";
+      statusCard.className = "w-full max-w-3xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700/80 rounded-3xl p-8 sm:p-12 text-center shadow-xl dark:shadow-2xl transition-all duration-500 my-auto";
       statusText.innerText = "Tap Kartu E-Toll";
-      statusText.className = "text-4xl md:text-6xl font-black text-slate-200 tracking-tight";
+      statusText.className = "text-3xl sm:text-5xl md:text-6xl font-black text-slate-800 dark:text-slate-100 tracking-tight transition-all";
       statusSubtext.innerText = "Menunggu transaksi kendaraan dari sensor RFID...";
     }
 
-    // 4. FETCH DATA DARI SUPABASE
     async function fetchTollData() {
       try {
+        // Fetch 5 transaksi riwayat terakhir
         const { data, error } = await sbClient
           .from('riwayat_tol')
           .select('*')
@@ -165,6 +274,7 @@
 
         if (error) throw error;
 
+        // Fetch hitungan total kendaraan (HANYA YANG BERHASIL)
         const { count, error: countError } = await sbClient
           .from('riwayat_tol')
           .select('id', { count: 'exact', head: true })
@@ -174,21 +284,23 @@
           vehicleCountEl.innerText = count || 0;
         }
 
+        // Render data ke tabel
         if (data && data.length > 0) {
           tableBody.innerHTML = '';
           data.forEach(row => {
             const timeFormatted = new Date(row.created_at).toLocaleTimeString('id-ID');
-            const statusClass = row.status === 'Berhasil' 
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-              : 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+            const isSuccess = row.status === 'Berhasil';
+            const statusClass = isSuccess 
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' 
+              : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
 
             const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-700/30 transition";
+            tr.className = "hover:bg-slate-50 dark:hover:bg-slate-700/30 transition border-b border-slate-100 dark:border-slate-700/40 last:border-0";
             tr.innerHTML = `
-              <td class="py-2.5 px-3 font-mono text-slate-300">${timeFormatted}</td>
-              <td class="py-2.5 px-3 font-mono font-bold text-blue-400">${row.uid_kartu || '-'}</td>
-              <td class="py-2.5 px-3">
-                <span class="px-2 py-0.5 rounded text-xs border ${statusClass}">
+              <td class="py-3 px-4 font-mono text-slate-600 dark:text-slate-300">${timeFormatted}</td>
+              <td class="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">${row.uid_kartu || '-'}</td>
+              <td class="py-3 px-4">
+                <span class="px-2.5 py-1 rounded-md text-xs font-semibold border ${statusClass}">
                   ${row.status}
                 </span>
               </td>
@@ -196,29 +308,30 @@
             tableBody.appendChild(tr);
           });
 
+          // Cek transaksi paling baru untuk indikator Banner Utama
           const latest = data[0];
           const timeDiff = (new Date() - new Date(latest.created_at)) / 1000;
 
+          // Tampilkan respon visual selama 5 detik setelah transaksi terjadi
           if (timeDiff <= 5) {
             clearTimeout(resetTimeout);
             if (latest.status === 'Berhasil') {
-              statusCard.className = "w-full max-w-3xl bg-emerald-950/80 border-2 border-emerald-500 rounded-2xl p-8 text-center shadow-2xl transition-all duration-500 my-auto shadow-emerald-900/50";
+              statusCard.className = "w-full max-w-3xl bg-emerald-50 dark:bg-emerald-950/80 border-2 border-emerald-500 rounded-3xl p-8 sm:p-12 text-center shadow-2xl transition-all duration-500 my-auto shadow-emerald-500/20";
               statusText.innerText = "TAP E-TOLL BERHASIL";
-              statusText.className = "text-4xl md:text-6xl font-black text-emerald-400 tracking-tight";
+              statusText.className = "text-3xl sm:text-5xl md:text-6xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight transition-all";
               statusSubtext.innerText = `UID: ${latest.uid_kartu} - Palang Terbuka`;
             } else {
-              statusCard.className = "w-full max-w-3xl bg-rose-950/80 border-2 border-rose-500 rounded-2xl p-8 text-center shadow-2xl transition-all duration-500 my-auto shadow-rose-900/50";
+              statusCard.className = "w-full max-w-3xl bg-rose-50 dark:bg-rose-950/80 border-2 border-rose-500 rounded-3xl p-8 sm:p-12 text-center shadow-2xl transition-all duration-500 my-auto shadow-rose-500/20";
               statusText.innerText = "TAP E-TOLL GAGAL";
-              statusText.className = "text-4xl md:text-6xl font-black text-rose-400 tracking-tight";
+              statusText.className = "text-3xl sm:text-5xl md:text-6xl font-black text-rose-600 dark:text-rose-400 tracking-tight transition-all";
               statusSubtext.innerText = `UID: ${latest.uid_kartu} - Kartu Tidak Terdaftar`;
             }
             resetTimeout = setTimeout(resetToIdle, 4000);
           }
         } else {
-          // Tampilan jika database kosong (setelah direset)
           tableBody.innerHTML = `
             <tr>
-              <td colspan="3" class="py-4 text-center text-slate-500 italic">Belum ada riwayat transaksi</td>
+              <td colspan="3" class="py-6 text-center text-slate-400 italic">Belum ada riwayat transaksi</td>
             </tr>
           `;
         }
@@ -227,11 +340,13 @@
       }
     }
 
-    // 5. FUNGSI HAPUS & RESET ID (DENGAN PASSWORD)
+    // -------------------------------------------------------------
+    // 5. FUNGSI HAPUS DATABASE (RESET ID KE 1)
+    // -------------------------------------------------------------
     async function hapusDanResetDatabase() {
       const inputPin = prompt("Masukkan PIN Admin untuk menghapus seluruh riwayat:");
       
-      if (inputPin === null) return; // User menekan Cancel
+      if (inputPin === null) return;
 
       if (inputPin !== ADMIN_PIN) {
         alert("PIN Salah! Akses ditolak.");
@@ -242,25 +357,23 @@
       if (!konfirmasi) return;
 
       try {
-        // Memanggil fungsi SQL 'reset_riwayat_tol' di Supabase
         const { error } = await sbClient.rpc('reset_riwayat_tol');
 
         if (error) throw error;
 
         alert("Sukses! Riwayat transaksi telah dikosongkan dan ID direset ke 1.");
         
-        // Refresh tampilan
         vehicleCountEl.innerText = "0";
         fetchTollData();
         resetToIdle();
 
       } catch (err) {
         console.error("Gagal reset database:", err);
-        alert("Gagal mereset database. Pastikan Anda sudah membuat fungsi 'reset_riwayat_tol' di SQL Editor Supabase.");
+        alert("Gagal mereset database. Pastikan fungsi 'reset_riwayat_tol' sudah di-run di SQL Editor Supabase.");
       }
     }
 
-    // Interval fetch data
+    // Jalankan polling data setiap 1.5 detik
     setInterval(fetchTollData, 1500);
     fetchTollData();
   </script>
