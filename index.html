@@ -168,6 +168,7 @@
         const { count, error: countError } = await sbClient
           .from('riwayat_tol')
           .select('id', { count: 'exact', head: true });
+          .eq('status', 'Berhasil');
 
         if (!countError) {
           vehicleCountEl.innerText = count || 0;
