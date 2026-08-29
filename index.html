@@ -21,11 +21,20 @@
         Toll Gate System <span class="text-xs bg-blue-600 px-2 py-1 rounded-full text-blue-100 font-normal ml-2">Cloud Live</span>
       </h1>
     </div>
-    <div class="flex items-center space-x-6 mt-2 md:mt-0">
+    
+    <div class="flex items-center space-x-4 mt-2 md:mt-0">
       <div class="flex items-center space-x-2">
         <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span class="text-xs text-slate-400 font-medium">Supabase Connected</span>
+        <span class="text-xs text-slate-400 font-medium hidden sm:inline">Supabase Connected</span>
       </div>
+      
+      <!-- TOMBOL RESET DATABASE DENGAN PIN -->
+      <button onclick="hapusDanResetDatabase()" 
+              class="bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+        <span>Reset Database</span>
+      </button>
+
       <div id="clock" class="text-lg font-mono font-bold text-blue-400 bg-slate-900/60 px-3 py-1 rounded border border-slate-700">
         00:00:00
       </div>
@@ -97,7 +106,7 @@
         <i data-lucide="info" class="w-4 h-4 text-slate-500"></i>
         <span>Dashboard dikoneksikan langsung ke NodeMCU ESP8266 via Database Supabase.</span>
       </div>
-      <a href="https://nataru.pu.go.id/cctv-tol?id_ruas=balikpapan-samarinda" target="_blank" 
+      <a href="https://binamarga.pu.go.id/contents/cctv_tol/?id_ruas=balikpapan-samarinda" target="_blank" 
          class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition shadow">
         <i data-lucide="video" class="w-4 h-4"></i>
         <span>CCTV Tol Balikpapan-Samarinda</span>
@@ -107,14 +116,15 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    // 1. KONFIGURASI SUPABASE
+    // 1. KONFIGURASI SUPABASE & ADMIN PIN
     const SUPABASE_URL = "https://jpqyeqcxiseswkoxnzrd.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcXllcWN4aXNlc3drb3huenJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MDU0MDIsImV4cCI6MjEwMzQ4MTQwMn0.sPNRkjKHu2SlHyAn3qdtbFxhv4zO-exRiBclHzym2WI";
     
-    // Naming diganti 'sbClient' agar tidak bentrok dengan namespace 'supabase' bawaan CDN
+    // Kata sandi untuk mereset riwayat database (Bisa diubah sesuai keinginan)
+    const ADMIN_PIN = "1234";
+
     const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Inisialisasi ikon Lucide
     if (window.lucide) {
       lucide.createIcons();
     }
@@ -147,7 +157,6 @@
     // 4. FETCH DATA DARI SUPABASE
     async function fetchTollData() {
       try {
-        // Ambil 5 riwayat transaksi terakhir
         const { data, error } = await sbClient
           .from('riwayat_tol')
           .select('*')
@@ -156,7 +165,6 @@
 
         if (error) throw error;
 
-        // Ambil total count kendaraan
         const { count, error: countError } = await sbClient
           .from('riwayat_tol')
           .select('id', { count: 'exact', head: true });
@@ -165,7 +173,6 @@
           vehicleCountEl.innerText = count || 0;
         }
 
-        // Render tabel
         if (data && data.length > 0) {
           tableBody.innerHTML = '';
           data.forEach(row => {
@@ -188,11 +195,9 @@
             tableBody.appendChild(tr);
           });
 
-          // Update Tampilan Banner Utama berdasarkan transaksi paling baru
           const latest = data[0];
           const timeDiff = (new Date() - new Date(latest.created_at)) / 1000;
 
-          // Jika transaksi terjadi dalam 5 detik terakhir, tampilkan respon visual
           if (timeDiff <= 5) {
             clearTimeout(resetTimeout);
             if (latest.status === 'Berhasil') {
@@ -208,13 +213,53 @@
             }
             resetTimeout = setTimeout(resetToIdle, 4000);
           }
+        } else {
+          // Tampilan jika database kosong (setelah direset)
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="3" class="py-4 text-center text-slate-500 italic">Belum ada riwayat transaksi</td>
+            </tr>
+          `;
         }
       } catch (err) {
         console.error("Error fetching Supabase:", err);
       }
     }
 
-    // Interval fetch setiap 1.5 detik
+    // 5. FUNGSI HAPUS & RESET ID (DENGAN PASSWORD)
+    async function hapusDanResetDatabase() {
+      const inputPin = prompt("Masukkan PIN Admin untuk menghapus seluruh riwayat:");
+      
+      if (inputPin === null) return; // User menekan Cancel
+
+      if (inputPin !== ADMIN_PIN) {
+        alert("PIN Salah! Akses ditolak.");
+        return;
+      }
+
+      const konfirmasi = confirm("PIN Benar. Apakah Anda YAKIN ingin mengosongkan tabel dan mengembalikan urutan ID ke angka 1?");
+      if (!konfirmasi) return;
+
+      try {
+        // Memanggil fungsi SQL 'reset_riwayat_tol' di Supabase
+        const { error } = await sbClient.rpc('reset_riwayat_tol');
+
+        if (error) throw error;
+
+        alert("Sukses! Riwayat transaksi telah dikosongkan dan ID direset ke 1.");
+        
+        // Refresh tampilan
+        vehicleCountEl.innerText = "0";
+        fetchTollData();
+        resetToIdle();
+
+      } catch (err) {
+        console.error("Gagal reset database:", err);
+        alert("Gagal mereset database. Pastikan Anda sudah membuat fungsi 'reset_riwayat_tol' di SQL Editor Supabase.");
+      }
+    }
+
+    // Interval fetch data
     setInterval(fetchTollData, 1500);
     fetchTollData();
   </script>
